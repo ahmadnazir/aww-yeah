@@ -9,7 +9,7 @@ case $OS in
         ./linux.sh
         ;;
     'Darwin')
-        echo 'Provisioning not implemented for MAC'
+        ./mac.sh
         ;;
     *) ;;
 esac
