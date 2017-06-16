@@ -64,18 +64,20 @@ function get(id) {
     return service;
 }
 
-function getLogFileForProfile(service, profile) {
+function getLogFilesForProfile(service, profile) {
     // Get the profile is requested
     if (!service.logs || !service.logs.profiles) {
         console.log('Profile "%s" is not defined for service "%s"'.red, profile, service.id);
         process.exit(0);
     }
-    var file = service.logs.profiles[profile];
-    if (!file) {
+    var files = service.logs.profiles[profile];
+    if (!files) {
         console.log('Profiles are not defined for service %s'.red, service.id);
         process.exit(0);
     }
-    return service.path + '/' + file;
+    return files.map(file => {
+        return service.path + '/' + file;
+    });
 }
 
 function getLogFile(service) {
@@ -139,21 +141,23 @@ function exec(id, command, options) {
         break;
     case 'monitor':
         // @todo: move this to a separate file (lib/monitor.js)
-        var file = options.profile ? getLogFileForProfile(service, options.profile) : getLogFile(service);
-        console.log(file);
-        console.log();
-        cmd = 'tail -f ' + file;
-        var parts = cmd.split(' ');
-        var command = parts.shift();
-        var args = parts;
-        var p = childProcess.spawn(command, args);
-        var color = options.color || 'gray';
-        var name = ('[ ' + service.id.toUpperCase() + ' ] ').bold;
-        p.stdout.on('data', (data) => {
-            process.stdout.write(`${data}`.replace(/^/g, name)[color]);
-        });
-        p.stderr.on('data', (data) => {
-            process.stdout.write(`${data}`.red);
+        var files = options.profile ? getLogFilesForProfile(service, options.profile) : [getLogFile(service)];
+        files.forEach(file => {
+            console.log(file);
+            console.log();
+            cmd = 'tail -f ' + file;
+            var parts = cmd.split(' ');
+            var command = parts.shift();
+            var args = parts;
+            var p = childProcess.spawn(command, args);
+            var color = file.match('error') && 'red' || options.color || 'gray';
+            var name = ('[ ' + service.id.toUpperCase() + ' ] ').bold;
+            p.stdout.on('data', (data) => {
+                process.stdout.write(`${data}`.replace(/^/g, name)[color]);
+            });
+            p.stderr.on('data', (data) => {
+                process.stdout.write(`${data}`.red);
+            });
         });
         return;
 
