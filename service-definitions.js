@@ -7,7 +7,10 @@ var services = {
         logs: {
             directories: ['app/log'],
             profiles: {
-                default: 'app/log/nginx_access.log'
+                default: [
+                    'app/log/nginx_access.log',
+                    'app/log/nginx_error.log'
+                ]
             }
         },
 
@@ -17,7 +20,10 @@ var services = {
         logs: {
             directories: ['app/logs', 'app/logs/server'],
             profiles: {
-                default: 'app/logs/server/nginx_access.log'
+                default: [
+                    'app/logs/server/nginx_access.log',
+                    'app/logs/server/nginx_error.log'
+                ]
             }
         },
         port: 8000,
@@ -30,7 +36,11 @@ var services = {
         logs: {
             directories: ['var/logs', 'app/logs/server'],
             profiles: {
-                default: 'app/logs/server/nginx_access.log'
+                default: [
+                    'app/logs/server/nginx_access.log',
+                    'app/logs/server/nginx_error.log',
+                    'var/logs/dev_error.log'
+                ]
             }
         },
         port: 8002,
