@@ -22,7 +22,8 @@ var services = {
             profiles: {
                 default: [
                     'app/logs/server/nginx_access.log',
-                    'app/logs/server/nginx_error.log'
+                    'app/logs/server/nginx_error.log',
+                    'app/logs/penneo_error_dev.log'
                 ]
             }
         },
