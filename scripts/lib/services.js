@@ -145,7 +145,7 @@ function exec(id, command, options) {
         files.forEach(file => {
             console.log(file);
             console.log();
-            cmd = 'tail -f ' + file;
+            cmd = 'tail -f -n 0 ' + file;
             var parts = cmd.split(' ');
             var command = parts.shift();
             var args = parts;

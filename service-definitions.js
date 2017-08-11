@@ -60,6 +60,18 @@ var services = {
     },
     form: {
         name: "forms",
+        logs: {
+            directories: ['app/logs', 'app/logs/server'],
+            profiles: {
+                default: [
+                    'app/logs/server/nginx_access.log',
+                    'app/logs/server/nginx_error.log',
+                    'app/logs/dev_penneo_framework.log',
+                    'app/logs/dev_penneo_workflow.log',
+                    'app/logs/dev_penneo_form.log'
+                ]
+            }
+        },
         port: 8001,
         docs: {
             publicUrl: "/app_dev.php/api/doc"
