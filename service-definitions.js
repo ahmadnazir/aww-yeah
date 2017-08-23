@@ -16,7 +16,7 @@ var services = {
 
     },
     sign: {
-        name: "Symfony2",
+        name: "signing-service",
         logs: {
             directories: ['app/logs', 'app/logs/server'],
             profiles: {
