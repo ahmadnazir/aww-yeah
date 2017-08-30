@@ -23,7 +23,8 @@ var services = {
                 default: [
                     'app/logs/server/nginx_access.log',
                     'app/logs/server/nginx_error.log',
-                    'app/logs/penneo_error_dev.log'
+                    'app/logs/penneo_error_dev.log',
+                    'app/logs/penneo_core_dev.log'
                 ]
             }
         },
