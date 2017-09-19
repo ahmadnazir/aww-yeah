@@ -14,6 +14,7 @@ var ssh      = cfg.github.ssh;
 let dockerCommand = {
     up: 'project-runner/run.sh dev',
     start: 'project-runner/run.sh dev start',
+    recreate: 'project-runner/run.sh dev up -d --force-recreate',
     stop: 'project-runner/run.sh dev stop',
     isRunning: 'docker ps | grep {service-id}',
     env: 'project-runner/login.sh dev'
@@ -125,6 +126,9 @@ function exec(id, command, options) {
         break;
     case 'start':
         cmd = service.commands && service.commands.start || dockerCommand.start;
+        break;
+    case 'recreate':
+        cmd = service.commands && service.commands.recreate || dockerCommand.recreate;
         break;
     case 'stop':
         // @todo: need to find a better way to determine whether the cmd is raw
