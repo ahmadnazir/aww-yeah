@@ -1,10 +1,12 @@
-var config  = require('./../lib/config');
+var os           = require('os');
+var config       = require('./../lib/config');
 var definitions  = require('./../../service-definitions');
 var shelljs      = require('shelljs');
 var childProcess = require('child_process'); // replace shelljs?
 var prettyJson   = require('prettyjson');
 var colors       = require('colors');
 var prompt       = require('prompt-sync')();
+var fs           = require('fs');
 
 var cfg      = config.get();
 var username = cfg.github.username;
@@ -17,7 +19,8 @@ let dockerCommand = {
     recreate: 'project-runner/run.sh dev up -d --force-recreate',
     stop: 'project-runner/run.sh dev stop',
     isRunning: 'docker ps | grep {service-id}',
-    env: 'project-runner/login.sh dev'
+    env: 'project-runner/login.sh dev',
+    bootstrap: 'scripts/bootstrap.sh'
 };
 
 function getDefined(includeDisabled) {
@@ -35,11 +38,13 @@ function getDefined(includeDisabled) {
                    ? definition.name
                    : username + '/' + definition.name)
                 + '.git';
+        var path = cfg.dir + '/' + definition.name;
+
         all[id] = Object.assign(definition, {
-            id: id,
-            url: url,
-            path: cfg.dir + '/' + definition.name,
-            enabled: enabled
+          id: id,
+          url: url,
+          path: path,
+          enabled: enabled
         });
     }
     return all;
@@ -47,12 +52,19 @@ function getDefined(includeDisabled) {
 
 function validate(id) {
     let service = getDefined()[id];
+
     if (!id || !service) {
         error = "Service \"%s\" doesn't exist!";
         error += ' Configured services are: %s\n';
         console.log(error.yellow, id, Object.keys(getDefined()));
         process.exit(0);
     }
+
+      if (!fs.existsSync(service.path)) {
+        error = "Service folder \"%s\" doesn't exist!";
+        console.log(error.yellow, service.path);
+        process.exit(1);
+      }
 
     return service;
 }
@@ -122,8 +134,8 @@ function exec(id, command, options) {
     let raw = false;
     switch (command) {
     case 'up':
-        cmd = service.commands && service.commands.up || dockerCommand.up;
-        break;
+        cmd = service.commands && service.commands.up || dockerCommand.up; 
+	    break;
     case 'start':
         cmd = service.commands && service.commands.start || dockerCommand.start;
         break;
@@ -174,21 +186,29 @@ function exec(id, command, options) {
     }
 
     if (raw) {
-        console.log(colors.gray(cmd));
-        var exec = shelljs.exec(cmd, {silent: true});
-        console.log(colors.gray(exec.stdout || exec.stderr));
+        runCommandRaw(cmd);
     } else {
-        console.log(cmd.gray);
-        console.log();
-        var parts = cmd.split(' ');
-        var command = parts.shift();
-        var args = parts;
-        var p = childProcess.spawn(command, args, {
-            cwd: service.path,
-            stdio: 'inherit'
-            // detached: true
-        });
+        runCommand(cmd, service.path);
     }
+}
+
+function runCommandRaw(cmd) {
+    console.log(colors.gray(cmd));
+    var exec = shelljs.exec(cmd, {silent: true});
+    console.log(colors.gray(exec.stdout || exec.stderr));
+}
+
+function runCommand(cmd, path) {
+    console.log(cmd.gray);
+    console.log();
+    var parts = cmd.split(' ');
+    var command = parts.shift();
+    var args = parts;
+    var p = childProcess.spawn(command, args, {
+        cwd: path,
+        stdio: 'inherit'
+        // detached: true
+    });
 }
 
 function displayInfo(id, brief) {
@@ -219,6 +239,28 @@ function displayStatus(service, silent) {
                );
 }
 
+function clone(base, name, url) {
+    let path = base + '/' + name;
+
+    if (fs.existsSync(path)) {
+        error = "The repository %s seems to be already cloned!\n";
+        console.log(error.yellow, "\"" + name + "\"");
+        return;
+    }
+
+    console.log("Cloning started...".green);
+
+    let command = 'git clone --recursive ' + url + ' ' + path;
+
+    runCommandRaw(command);
+}
+
+function bootstrap(path) {
+    console.log("Bootstrapping started...".green);
+
+    runCommand(dockerCommand.bootstrap, path);
+}
+
 function pad(string) {
     var chars = '          ';
     return (chars + string).slice(-chars.length);
@@ -238,5 +280,7 @@ module.exports = {
     validate: validate,
     displayInfo: displayInfo,
     displayStatus: displayStatus,
-    getDocs: getDocs
+    getDocs: getDocs,
+    clone: clone,
+    bootstrap: bootstrap
 }
