@@ -20,7 +20,8 @@ let dockerCommand = {
     stop: 'project-runner/run.sh dev stop',
     isRunning: 'docker ps | grep {service-id}',
     env: 'project-runner/login.sh dev',
-    bootstrap: 'scripts/bootstrap.sh'
+    bootstrap: 'scripts/bootstrap.sh',
+    image: ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev']
 };
 
 function getDefined(includeDisabled) {
@@ -134,8 +135,11 @@ function exec(id, command, options) {
     let raw = false;
     switch (command) {
     case 'up':
-        cmd = service.commands && service.commands.up || dockerCommand.up; 
-	    break;
+        cmd = service.commands && service.commands.up || dockerCommand.up;
+        break;
+    case 'image':
+        cmd = service.commands && service.commands.image || dockerCommand.image;
+        break;
     case 'start':
         cmd = service.commands && service.commands.start || dockerCommand.start;
         break;
@@ -181,15 +185,19 @@ function exec(id, command, options) {
     case '':
         // intentional break-through
     default:
-        console.log('Invalid command specified "%s". Valid commands are up, start, stop, env, monitor.'.yellow, command);
+        console.log('Invalid command specified "%s". Valid commands are up, start, stop, env, monitor, image.'.yellow, command);
         return;
     }
 
-    if (raw) {
-        runCommandRaw(cmd);
-    } else {
-        runCommand(cmd, service.path);
-    }
+    var cmds = (typeof cmd === 'object' && cmd.constructor === Array) ? cmd : [cmd];
+
+    cmds.forEach(function(cmd) {
+        if (raw) {
+            runCommandRaw(cmd);
+        } else {
+            runCommand(cmd, service.path);
+        }
+    });
 }
 
 function runCommandRaw(cmd) {

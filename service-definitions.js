@@ -53,8 +53,10 @@ var services = {
     frontend: {
         name: "fe-application-loader",
         commands: {
+            // Use 'nvm use' for the project before running this
+            // up: 'nvm use v5.11.1 && npm start #aww-frontend', // doesn't seem to be working
             up: 'npm start #aww-frontend',
-            start: 'npm start #aww-frontend',
+            start: 'echo "Use the up command"',
             stop: "ps ax | grep \\#aww-frontend | grep -v grep | awk '{print $1}' | xargs -I % kill %",
             isRunning: "ps ax | grep \\#aww-frontend | grep -v grep"
         }
