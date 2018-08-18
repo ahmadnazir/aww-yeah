@@ -91,6 +91,19 @@ var services = {
         logs: {
             directories: ['app/logs']
         }
+    },
+
+    // Default settings for the services
+    COMMAND: {
+        up: 'project-runner/run.sh dev',
+        start: 'project-runner/run.sh dev start',
+        recreate: 'project-runner/run.sh dev up -d --force-recreate',
+        stop: 'project-runner/run.sh dev stop',
+        isRunning: 'docker ps | grep {service-id}',
+        env: 'project-runner/login.sh dev',
+        bootstrap: 'scripts/bootstrap.sh',
+        image: ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev'],
+        exec: "./project-runner/run.sh dev run --rm app sh -c '{{COMMAND}}'"
     }
 };
 

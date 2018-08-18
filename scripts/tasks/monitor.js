@@ -1,6 +1,6 @@
-var services   = require('./../lib/services');
-var colors     = require('colors');
-var optimist   = require('optimist');
+var services = require('./../lib/services');
+var colors   = require('colors');
+var optimist = require('optimist');
 
 var args    = optimist
     .usage(

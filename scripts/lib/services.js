@@ -2,27 +2,17 @@ var os           = require('os');
 var config       = require('./../lib/config');
 var definitions  = require('./../../service-definitions');
 var shelljs      = require('shelljs');
-var childProcess = require('child_process'); // replace shelljs?
+var childProcess = require('child_process');
 var prettyJson   = require('prettyjson');
 var colors       = require('colors');
 var prompt       = require('prompt-sync')();
 var fs           = require('fs');
+var command      = require('./command');
+var monitor      = require('./monitor');
 
 var cfg      = config.get();
 var username = cfg.github.username;
 var ssh      = cfg.github.ssh;
-
-// Shell commands for docker services using project runner
-let dockerCommand = {
-    up: 'project-runner/run.sh dev',
-    start: 'project-runner/run.sh dev start',
-    recreate: 'project-runner/run.sh dev up -d --force-recreate',
-    stop: 'project-runner/run.sh dev stop',
-    isRunning: 'docker ps | grep {service-id}',
-    env: 'project-runner/login.sh dev',
-    bootstrap: 'scripts/bootstrap.sh',
-    image: ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev']
-};
 
 function getDefined(includeDisabled) {
     var all = {};
@@ -129,93 +119,61 @@ function getLogFile(service) {
     return all[selection - 1];
 }
 
-function exec(id, command, options) {
+function exec(id, cmd, options) {
     let service = get(id);
-    let cmd;
+    let c;
     let raw = false;
-    switch (command) {
+    switch (cmd) {
     case 'up':
-        cmd = service.commands && service.commands.up || dockerCommand.up;
+        c = service.commands && service.commands.up || definitions.COMMAND.up;
         break;
     case 'image':
-        cmd = service.commands && service.commands.image || dockerCommand.image;
+        c = service.commands && service.commands.image || definitions.COMMAND.image;
         break;
     case 'start':
-        cmd = service.commands && service.commands.start || dockerCommand.start;
+        c = service.commands && service.commands.start || definitions.COMMAND.start;
         break;
     case 'recreate':
-        cmd = service.commands && service.commands.recreate || dockerCommand.recreate;
+        c = service.commands && service.commands.recreate || definitions.COMMAND.recreate;
         break;
     case 'stop':
         // @todo: need to find a better way to determine whether the cmd is raw
         // or not
         if (service.commands && service.commands.stop) {
             raw = true;
-            cmd = service.commands.stop;
+            c  = service.commands.stop;
         } else {
-            cmd = dockerCommand.stop;
+            c = definitions.COMMAND.stop;
         }
         break;
     case 'env':
-        cmd = service.commands && service.commands.env || dockerCommand.env;
+        c = service.commands && service.commands.env || definitions.COMMAND.env;
+        break;
+    case 'exec':
+        c = service.commands && service.commands.exec || definitions.COMMAND.exec;
         break;
     case 'monitor':
         // @todo: move this to a separate file (lib/monitor.js)
-        var files = options.profile ? getLogFilesForProfile(service, options.profile) : [getLogFile(service)];
+        var files = options.profile
+            ? getLogFilesForProfile(service, options.profile)
+            : [getLogFile(service)];
         files.forEach(file => {
-            console.log(file);
-            console.log();
-            cmd = 'tail -f -n 0 ' + file;
-            var parts = cmd.split(' ');
-            var command = parts.shift();
-            var args = parts;
-            var p = childProcess.spawn(command, args);
-            var color = file.match('error') && 'red' || options.color || 'gray';
-            var name = ('[ ' + service.id.toUpperCase() + ' ] ').bold;
-            p.stdout.on('data', (data) => {
-                process.stdout.write(`${data}`.replace(/^/g, name)[color]);
-            });
-            p.stderr.on('data', (data) => {
-                process.stdout.write(`${data}`.red);
-            });
+            monitor.run(service.id, file, options);
         });
         return;
-
-        break;
-    case '':
-        // intentional break-through
     default:
         console.log('Invalid command specified "%s". Valid commands are up, start, stop, env, monitor, image.'.yellow, command);
         return;
     }
 
-    var cmds = (typeof cmd === 'object' && cmd.constructor === Array) ? cmd : [cmd];
+    var cs = (typeof c === 'object' && c.constructor === Array) ? c : [c];
 
-    cmds.forEach(function(cmd) {
+    cs.forEach(function(c) {
         if (raw) {
-            runCommandRaw(cmd);
+            command.runRaw(c);
         } else {
-            runCommand(cmd, service.path);
+            command.run(c, service.path);
         }
-    });
-}
-
-function runCommandRaw(cmd) {
-    console.log(colors.gray(cmd));
-    var exec = shelljs.exec(cmd, {silent: true});
-    console.log(colors.gray(exec.stdout || exec.stderr));
-}
-
-function runCommand(cmd, path) {
-    console.log(cmd.gray);
-    console.log();
-    var parts = cmd.split(' ');
-    var command = parts.shift();
-    var args = parts;
-    var p = childProcess.spawn(command, args, {
-        cwd: path,
-        stdio: 'inherit'
-        // detached: true
     });
 }
 
@@ -233,11 +191,11 @@ function displayInfo(id, brief) {
 
 function displayStatus(service, silent) {
     var id = service.id;
-    var command = service.commands && service.commands.isRunning || dockerCommand.isRunning;
-    command = command.replace('{service-id}', id);
-    var exec = shelljs.exec(command, {silent: true});
+    var c = service.commands && service.commands.isRunning || definitions.COMMAND.isRunning;
+    c = command.replace('{service-id}', id);
+    var exec = shelljs.exec(c, {silent: true});
     if (!silent) {
-        console.log(command.gray);
+        console.log(c.gray);
         console.log();
         console.log(colors.gray(exec.stdout));
     }
@@ -258,15 +216,14 @@ function clone(base, name, url) {
 
     console.log("Cloning started...".green);
 
-    let command = 'git clone --recursive ' + url + ' ' + path;
-
-    runCommandRaw(command);
+    let cmd = 'git clone --recursive ' + url + ' ' + path;
+    command.runRaw(cmd);
 }
 
 function bootstrap(path) {
     console.log("Bootstrapping started...".green);
 
-    runCommand(dockerCommand.bootstrap, path);
+    command.run(definitions.COMMAND.bootstrap, path);
 }
 
 function pad(string) {
@@ -284,6 +241,7 @@ function getDocs(service, ignoreMissing) {
 
 module.exports = {
     getDefined: getDefined,
+    get: get,
     exec: exec,
     validate: validate,
     displayInfo: displayInfo,
