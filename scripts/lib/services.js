@@ -195,7 +195,7 @@ function displayInfo(id, brief) {
 function displayStatus(service, silent) {
     var id = service.id;
     var c = service.commands && service.commands.isRunning || definitions.COMMAND.isRunning;
-    c = command.replace('{service-id}', id);
+    c = c.replace('{service-id}', id);
     var exec = shelljs.exec(c, {silent: true});
     if (!silent) {
         console.log(c.gray);
