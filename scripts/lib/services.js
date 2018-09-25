@@ -136,6 +136,9 @@ function exec(id, cmd, options) {
     case 'recreate':
         c = service.commands && service.commands.recreate || definitions.COMMAND.recreate;
         break;
+    case 'kill':
+        c = service.commands && service.commands.kill || definitions.COMMAND.kill;
+        break;
     case 'stop':
         // @todo: need to find a better way to determine whether the cmd is raw
         // or not

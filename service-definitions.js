@@ -99,6 +99,7 @@ var services = {
         start: 'project-runner/run.sh dev start',
         recreate: 'project-runner/run.sh dev up -d --force-recreate',
         stop: 'project-runner/run.sh dev stop',
+        kill: 'project-runner/run.sh dev kill',
         isRunning: 'docker ps | grep {service-id}',
         env: 'project-runner/login.sh dev',
         bootstrap: 'scripts/bootstrap.sh',
