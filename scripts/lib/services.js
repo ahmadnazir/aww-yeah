@@ -140,8 +140,12 @@ function exec(id, cmd, options) {
         c = service.commands && service.commands.kill || definitions.COMMAND.kill;
         break;
     case 'stop':
-        // @todo: need to find a better way to determine whether the cmd is raw
-        // or not
+        // @todo: update all relevant commands and make them objects so that we
+        // can determine which ones are raw instead of only making the stop
+        // commands raw, e.g.:
+        //
+        // {raw: "command ..."}
+        //
         if (service.commands && service.commands.stop) {
             raw = true;
             c  = service.commands.stop;
@@ -151,9 +155,6 @@ function exec(id, cmd, options) {
         break;
     case 'env':
         c = service.commands && service.commands.env || definitions.COMMAND.env;
-        break;
-    case 'exec':
-        c = service.commands && service.commands.exec || definitions.COMMAND.exec;
         break;
     case 'monitor':
         // @todo: move this to a separate file (lib/monitor.js)
@@ -172,8 +173,12 @@ function exec(id, cmd, options) {
     var cs = (typeof c === 'object' && c.constructor === Array) ? c : [c];
 
     cs.forEach(function(c) {
+        if (typeof c !== 'string') {
+            raw = true;
+            c = c.raw;
+        }
         if (raw) {
-            command.runRaw(c);
+            command.runRaw(c, service.path);
         } else {
             command.run(c, service.path);
         }

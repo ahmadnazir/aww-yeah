@@ -2,7 +2,25 @@ var services = {
     gateway: {
         name: "gateway-service",
         commands: {
-            env: 'project-runner/login.sh prod'
+            env: 'project-runner/login.sh prod',
+            image: 'project-runner/load-image.sh prod'
+        },
+        logs: {
+            directories: ['app/log'],
+            profiles: {
+                default: [
+                    'app/log/nginx_access.log',
+                    'app/log/nginx_error.log'
+                ]
+            }
+        },
+
+    },
+    entrypoint: {
+        name: "mock-entrypoint",
+        commands: {
+            env: 'project-runner/login.sh prod',
+            image: 'project-runner/load-image.sh prod'
         },
         logs: {
             directories: ['app/log'],
@@ -17,6 +35,24 @@ var services = {
     },
     sign: {
         name: "signing-service",
+        logs: {
+            directories: ['app/logs', 'app/logs/server'],
+            profiles: {
+                default: [
+                    'app/logs/server/nginx_access.log',
+                    'app/logs/server/nginx_error.log',
+                    'app/logs/penneo_error_dev.log',
+                    'app/logs/penneo_core_dev.log'
+                ]
+            }
+        },
+        port: 8008,
+        docs: {
+            publicUrl: "/app_dev.php/api/docs"
+        }
+    },
+    validation: {
+        name: "validation-service",
         logs: {
             directories: ['app/logs', 'app/logs/server'],
             profiles: {
@@ -93,19 +129,51 @@ var services = {
         }
     },
 
+    xign: {
+        name: "xign",
+        logs: {
+            directories: ['app/logs', 'app/logs/server'],
+            profiles: {
+                default: [
+                    'app/logs/server/nginx_access.log',
+                    'app/logs/server/nginx_error.log',
+                    'app/logs/penneo_error_prod.log',
+                    'app/logs/penneo_core_prod.log'
+                ]
+            }
+        },
+        port: 8000,
+        docs: {
+            publicUrl: "/api/docs"
+        },
+        commands: {
+            up        : {raw: "./penneo-run.sh deployable up -d"},
+            start     : 'project-runner/run.sh deployable start',
+            recreate  : {raw: "./penneo-run.sh deployable up -d --force-recreate"},
+            stop      : {raw: "./penneo-run.sh deployable stop"},
+            kill      : {raw: "./penneo-run.sh deployable kill"},
+            env       : "./login.sh xign_app",
+            bootstrap : 'echo "Not supported"',
+            exec      : "./project-runner/run.sh deployable run --rm app sh -c '{{COMMAND}}'",
+            image     : 'scripts/deploy/build-image.sh'
+        }
+    },
+
     // Default settings for the services
     COMMAND: {
-        up: 'project-runner/run.sh dev',
-        start: 'project-runner/run.sh dev start',
-        recreate: 'project-runner/run.sh dev up -d --force-recreate',
-        stop: 'project-runner/run.sh dev stop',
-        kill: 'project-runner/run.sh dev kill',
-        isRunning: 'docker ps | grep {service-id}',
-        env: 'project-runner/login.sh dev',
-        bootstrap: 'scripts/bootstrap.sh',
-        image: ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev'],
-        exec: "./project-runner/run.sh dev run --rm app sh -c '{{COMMAND}}'"
+        up        : 'project-runner/run.sh dev',
+        start     : 'project-runner/run.sh dev start',
+        recreate  : 'project-runner/run.sh dev up -d --force-recreate',
+        stop      : 'project-runner/run.sh dev stop',
+        kill      : 'project-runner/run.sh dev kill',
+        env       : 'project-runner/login.sh dev',
+        isRunning : 'docker ps | grep {service-id}',
+        bootstrap : 'scripts/bootstrap.sh',
+        exec      : "./project-runner/run.sh dev run --rm app sh -c '{{COMMAND}}'",
+        image     : ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev']
     }
 };
 
 module.exports = services;
+
+

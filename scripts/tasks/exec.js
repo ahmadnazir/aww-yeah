@@ -28,6 +28,9 @@ serviceIds.split(',').forEach((serviceId, index) => {
         console.log('Single quotes not allowed in the command:'.red);
         return;
     }
-    c = definitions.COMMAND.exec.replace('{{COMMAND}}', c);
+
+    c = (service.commands && service.commands.exec || definitions.COMMAND.exec)
+        .replace('{{COMMAND}}', c);
+
     command.run(c, service.path);
 });

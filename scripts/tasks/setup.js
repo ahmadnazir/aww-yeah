@@ -7,6 +7,9 @@ var mkdirp   = require('mkdirp');
 
 mkdirp(config.dir);
 
+console.log("Disabled this for now..");
+process.exit(-1);
+
 // Clone repos
 var servicesData = services.getDefined();
 for (var id in servicesData) {
