@@ -170,7 +170,8 @@ var services = {
         isRunning : 'docker ps | grep {service-id}',
         bootstrap : 'scripts/bootstrap.sh',
         exec      : "./project-runner/run.sh dev run --rm app sh -c '{{COMMAND}}'",
-        image     : ['project-runner/load-image.sh -d prod', 'project-runner/load-image.sh -d dev']
+        image     : ['project-runner/load-image.sh prod', 'project-runner/load-image.sh dev'
+                    ]
     }
 };
 

@@ -7,7 +7,7 @@ function runRaw(cmd, path) {
         cmd = 'cd ' + path + ' && ' + cmd;
     }
     console.log(colors.gray(cmd));
-    var exec = shelljs.exec(cmd, {silent: true});
+    var exec = shelljs.execSync(cmd, {silent: true});
     console.log(colors.gray(exec.stdout || exec.stderr));
 }
 
