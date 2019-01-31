@@ -129,36 +129,6 @@ var services = {
         }
     },
 
-    xign: {
-        name: "xign",
-        logs: {
-            directories: ['app/logs', 'app/logs/server'],
-            profiles: {
-                default: [
-                    'app/logs/server/nginx_access.log',
-                    'app/logs/server/nginx_error.log',
-                    'app/logs/penneo_error_prod.log',
-                    'app/logs/penneo_core_prod.log'
-                ]
-            }
-        },
-        port: 8000,
-        docs: {
-            publicUrl: "/api/docs"
-        },
-        commands: {
-            up        : {raw: "./penneo-run.sh deployable up -d"},
-            start     : 'project-runner/run.sh deployable start',
-            recreate  : {raw: "./penneo-run.sh deployable up -d --force-recreate"},
-            stop      : {raw: "./penneo-run.sh deployable stop"},
-            kill      : {raw: "./penneo-run.sh deployable kill"},
-            env       : "./login.sh xign_app",
-            bootstrap : 'echo "Not supported"',
-            exec      : "./project-runner/run.sh deployable run --rm app sh -c '{{COMMAND}}'",
-            image     : 'scripts/deploy/build-image.sh'
-        }
-    },
-
     // Default settings for the services
     COMMAND: {
         up        : 'project-runner/run.sh dev',

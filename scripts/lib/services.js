@@ -14,29 +14,57 @@ var cfg      = config.get();
 var username = cfg.github.username;
 var ssh      = cfg.github.ssh;
 
+function createDefinition(id) {
+    var definition = definitions[id];
+    var enabled = !!cfg.services[id];
+    var url = // (ssh ? 'git@github.com:' : 'https://github.com/')
+        'git@github.com:'
+        + (definition.name.indexOf('/') > 0
+           ? definition.name
+           : username + '/' + definition.name)
+        + '.git';
+    var path = cfg.dir + '/' + definition.name;
+
+    return Object.assign(definition, {
+        id: id,
+        url: url,
+        path: path,
+        enabled: enabled
+    });
+}
+
+function getDefinition(path) {
+    try {
+        return require(path);
+    } catch (err) {
+        console.log("Aww shucks! Unable to load aww yeah service definition at: %s\n".yellow, path);
+        console.log("%s\n".red, err);
+    }
+    process.exit(0);
+}
+
+// @todo: change name to getServiceDefinitions
 function getDefined(includeDisabled) {
     var all = {};
     for (var id in cfg.services) {
+        var value = cfg.services[id];
+        var definition = undefined;
+        var enabled;
+        // console.log(value);
+
+        if (typeof value == 'string') {
+            var path = value + '/' + '.yeah.json';
+            definition = getDefinition(path);
+            enabled    = !!definition.enabled;
+        } else {
+            enabled = !!value;
+        }
+
         // Filter out disabled services
-        var enabled = !!cfg.services[id];
         if (!includeDisabled && !enabled) {
             continue;
         }
-        var definition = definitions[id];
-        var url = // (ssh ? 'git@github.com:' : 'https://github.com/')
-                'git@github.com:'
-                + (definition.name.indexOf('/') > 0
-                   ? definition.name
-                   : username + '/' + definition.name)
-                + '.git';
-        var path = cfg.dir + '/' + definition.name;
-
-        all[id] = Object.assign(definition, {
-          id: id,
-          url: url,
-          path: path,
-          enabled: enabled
-        });
+        all[id] = definition ? definition : createDefinition(id);
     }
     return all;
 }

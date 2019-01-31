@@ -32,4 +32,4 @@ if [ `nvm current` != `echo -n $(cat .nvmrc)` ]; then
     nvm use > /dev/null
 fi
 
-npm run-script -- ${@:1}
+npm run-script -- $2 $1 ${@:3}
